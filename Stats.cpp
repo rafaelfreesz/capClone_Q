@@ -4,9 +4,10 @@
 
 #include "Stats.h"
 
-Stats::Stats(int intancesQty, Config *config) {
+Stats::Stats(int intancesQty, Config *config, bool isQL) {
     this->execs=config->executions;
     this->instancesQty=intancesQty;
+    this->isQL = isQL;
 
     this->bestTimes=new double [intancesQty];
     this->bestCosts=new double [intancesQty];
@@ -103,11 +104,18 @@ void Stats::printHeader(Config *config) {
     int fileId=0;
     string fileName="Stats//stats_"+ to_string(fileId);
 
+    if(this->isQL){
+        fileName = "Stats//stats_Q_"+ to_string(fileId);
+    }
+
     this->statsFile.open(fileName,ofstream::in);
     while(this->statsFile.is_open()){
         this->statsFile.close();
         fileId++;
         fileName="Stats//stats_"+ to_string(fileId);
+        if(this->isQL){
+            fileName = "Stats//stats_Q_"+ to_string(fileId);
+        }
         this->statsFile.open(fileName,ofstream::in);
     }
     this->statsFile.close();

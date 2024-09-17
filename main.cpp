@@ -15,12 +15,13 @@ int main() {
     vector<Instance*> instances = Utils::loadInstances("Instances/Instances");
     //500, 5000, 0.2, 0.50, 0.1,30
     Config* config = new Config(10, 500, 0.9, 0.2, 0.1,30);
-    Stats* stats= new Stats((int)instances.size(), config);
+    Stats* stats= new Stats((int) instances.size(), config, false);
+    Stats* stats_q= new Stats((int) instances.size(), config, true);
 
 
     for(int i=0;i<instances.size();i++){
         cout<<"Instância "+instances.at(i)->name<<endl;
-
+        cout<<"Execução Normal"<<endl;
         for(int j=0; j < config->executions; j++) {
             srand(config->seeds[j]);
             cout<<"\t"<<j<<" - ";
@@ -40,15 +41,39 @@ int main() {
 
             delete search;
         }
-
         stats->printStats(instances.at(i)->name,i);
         cout<<endl<<"RESUME: AVG TIME: "<<to_string(stats->avgTimes[i])<<"s | BEST COST: "<<to_string(stats->bestCosts[i])<<" | LitSol: "<<to_string(stats->litSol[i])<<" | GAP: "<<to_string(stats->gapsSol[i])<<endl<<endl;
+
+        cout<<"Execução Q-learning"<<endl;
+        for(int j=0; j < config->executions; j++) {
+            srand(config->seeds[j]);
+            cout<<"\t"<<j<<" - ";
+
+            Search* search = new Search(config, instances.at(i), stats_q->litSol[i]);
+
+            clock_t time=clock();
+            search->evolve();
+            time=clock()-time;
+
+            search->testAllPopulation();
+
+            stats_q->setStat(j, i, ((double) time / CLOCKS_PER_SEC), search->population[0]->cost);
+
+            cout<<"time: "<<to_string(stats->getTime(j,i))<<"s | cost: "<< to_string(stats->getCost(j,i))<<endl;
+
+
+            delete search;
+        }
+
+        stats_q->printStats(instances.at(i)->name,i);
+        cout<<endl<<"RESUME: AVG TIME: "<<to_string(stats_q->avgTimes[i])<<"s | BEST COST: "<<to_string(stats_q->bestCosts[i])<<" | LitSol: "<<to_string(stats_q->litSol[i])<<" | GAP: "<<to_string(stats_q->gapsSol[i])<<endl<<endl;
 
     }
 
 
     delete config;
     delete stats;
+    delete stats_q;
 
     return 0;
 }

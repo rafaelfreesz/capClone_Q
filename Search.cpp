@@ -40,10 +40,32 @@ void Search::evolve() {
    }
     improveMemory();
 }
+
+void Search::evolve_q() {
+    buildInitialPopulation();
+
+   for(int g=0;g<this->config->gen;g++){
+        operate_q();
+        reselect();
+        regenerate();
+   }
+    improveMemory_q();
+}
+
 void Search::improveMemory() {
     for(int i=0;i<this->config->memorySetSize;i++){
         if(!this->population[i]->improved) {
             rvnd(this->population[i]);
+            this->population[i]->improved= true;
+        }
+    }
+    sortPopulation();
+}
+
+void Search::improveMemory_q() {
+    for(int i=0;i<this->config->memorySetSize;i++){
+        if(!this->population[i]->improved) {
+            rvnd_q(this->population[i]);
             this->population[i]->improved= true;
         }
     }
@@ -70,6 +92,30 @@ void Search::operate() {
 
 
     rvnd(this->population[this->config->pSize]);
+    this->population[this->config->pSize]->improved= true;
+
+}
+
+void Search::operate_q() {
+
+    int iArray=this->config->pSize;
+
+    for(int i=0;i<this->config->memorySetSize; i++){
+
+        for(int j=0;j<this->config->clonesPerI[i];j++){
+            this->population[i]->clone(this->population[iArray]);
+            //this->population[iArray]=this->population[i]->clone(); //Clonagem do anticorpo
+            this->population[iArray]->improved= false;//Clonagem do anticorpo
+            maturate(iArray++, this->config->clonesPerI[i]); //Maturação (mutação) do indivíduo
+
+        }
+
+    }
+
+    sortClones();
+
+
+    rvnd_q(this->population[this->config->pSize]);
     this->population[this->config->pSize]->improved= true;
 
 }
@@ -304,6 +350,10 @@ void Search::rvnd(Antibody *antibody) {
         }
 
     }
+
+}
+void Search::rvnd_q(Antibody *antibody) {
+
 
 }
 //Fase de Trocas lado a lado //TODO Analisar melhor o movimento

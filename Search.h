@@ -18,16 +18,20 @@ public:
     ~Search();
 
     void evolve();
+    void evolve_q();
     void buildInitialPopulation();
     void operate();
+    void operate_q();
     void maturate(int iArray, int cloneQty);
     void reselect();
     void regenerate();
     void improveMemory();
+    void improveMemory_q();
 
     //Local Searches
     void localSearch(Antibody *antibody);
     void rvnd(Antibody* antibody);
+    void rvnd_q(Antibody* antibody);
     bool neighborsSwap(Antibody *antibody);
     bool nonNeiborhsSwap(Antibody *antibody);
     bool opositeSideSwap(Antibody *antibody);

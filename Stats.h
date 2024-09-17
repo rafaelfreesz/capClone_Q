@@ -12,7 +12,7 @@
 using namespace std;
 class Stats {
 public:
-    Stats(int intancesQty, Config *config);
+    Stats(int intancesQty, Config *config, bool isQL);
 
     ~Stats();
 
@@ -38,6 +38,8 @@ public:
     double* avgCosts;
 
     ofstream statsFile;
+
+    bool isQL;
 };
 
 
