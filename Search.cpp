@@ -55,7 +55,7 @@ void Search::evolve_q() {
 void Search::improveMemory() {
     for(int i=0;i<this->config->memorySetSize;i++){
         if(!this->population[i]->improved) {
-            rvnd(this->population[i]);
+            vns(this->population[i]);
             this->population[i]->improved= true;
         }
     }
@@ -65,7 +65,7 @@ void Search::improveMemory() {
 void Search::improveMemory_q() {
     for(int i=0;i<this->config->memorySetSize;i++){
         if(!this->population[i]->improved) {
-            rvnd_q(this->population[i]);
+            vns_q(this->population[i]);
             this->population[i]->improved= true;
         }
     }
@@ -80,8 +80,7 @@ void Search::operate() {
 
         for(int j=0;j<this->config->clonesPerI[i];j++){
             this->population[i]->clone(this->population[iArray]);
-            //this->population[iArray]=this->population[i]->clone(); //Clonagem do anticorpo
-            this->population[iArray]->improved= false;//Clonagem do anticorpo
+            this->population[iArray]->improved= false;
             maturate(iArray++, this->config->clonesPerI[i]); //Maturação (mutação) do indivíduo
 
         }
@@ -91,7 +90,7 @@ void Search::operate() {
     sortClones();
 
 
-    rvnd(this->population[this->config->pSize]);
+    vns(this->population[this->config->pSize]);
     this->population[this->config->pSize]->improved= true;
 
 }
@@ -115,7 +114,7 @@ void Search::operate_q() {
     sortClones();
 
 
-    rvnd_q(this->population[this->config->pSize]);
+    vns_q(this->population[this->config->pSize]);
     this->population[this->config->pSize]->improved= true;
 
 }
@@ -277,29 +276,6 @@ void Search::swapAntibody(int i, int j) {
     this->population[j]=antibody;
 }
 
-void Search::localSearch(Antibody *antibody) {
-
-    double bestCost=antibody->cost;
-
-    for(int i=0;i<this->instance->n-1;i++){
-
-        for(int j=i+1;j<this->instance->n;j++){
-            antibody->swapFacility(i, j);
-            antibody->calculateSwap(i,j);
-
-            if(antibody->cost<bestCost){
-                bestCost= antibody->cost;
-                i=-1;
-                break;
-            }else{
-                antibody->swapFacility(i, j);
-                antibody->calculateSwap(i,j);
-            }
-
-        }
-    }
-}
-
 void Search::rvnd(Antibody *antibody) {
 
     int searchSequence[3]={0, 1, 2};
@@ -353,6 +329,28 @@ void Search::rvnd(Antibody *antibody) {
 
 }
 void Search::rvnd_q(Antibody *antibody) {
+
+
+}
+void Search::vns(Antibody *antibody) {
+
+    int ls=rand()%3;
+    switch (ls) {
+        case NBR_SWAP:
+            neighborsSwap(antibody);
+            break;
+        case NONBR_SWAP:
+            nonNeiborhsSwap(antibody);
+            break;
+        case OPPS_SWAP:
+            opositeSideSwap(antibody);
+            break;
+        default:
+            cout<<"Algo deu errado"<<endl;
+    }
+
+}
+void Search::vns_q(Antibody *antibody) {
 
 
 }
@@ -479,99 +477,6 @@ bool Search::opositeSideSwap(Antibody *antibody) {
         }
     }
     return false;
-}
-
-void Search::PathR(Antibody *antibody) {
-
-   /* Antibody* bestAntibody=antibody->clone();
-
-    float foCorrente=antibody->cost;
-
-    bool* trocada=new bool[antibody->instance->n];
-    for(int i=0;i<antibody->instance->n;i++) trocada[i]=false;
-
-    int iE=0;
-    int iD= antibody->p - 1;
-    int melhortroca[2]={-1,-1};
-    float melhorParcial=-1;
-
-    int nTrocas=antibody->instance->n;
-    if(antibody->p%2==1){
-        nTrocas--;
-    }
-    if((antibody->instance->n-antibody->p)%2==1){
-        nTrocas--;
-    }
-
-    int trocas=0;
-    while(trocas<nTrocas) {
-        while (iE < iD) {
-            if(!trocada[iE]) {
-
-                antibody->swapFacility(iE,iD);
-                antibody->calculateSwap(iE, iD);
-
-                if (antibody->cost < melhorParcial || melhorParcial == -1) {
-                    melhortroca[0] = iE;
-                    melhortroca[1] = iD;
-                    melhorParcial = antibody->cost;
-                }
-
-                antibody->swapFacility(iE,iD);
-                antibody->calculateAbcissa();
-                antibody->cost=foCorrente;
-            }else{
-                iE++;
-                iD--;
-            }
-        }
-        iE=antibody->p;
-        iD=antibody->instance->n-1;
-
-        while (iE < iD) {
-            if(!trocada[iE]) {
-                antibody->swapFacility(iE,iD);
-                antibody->calculateSwap(iE, iD);
-
-                if (antibody->cost < melhorParcial || melhorParcial == -1) {
-                    melhortroca[0] = iE;
-                    melhortroca[1] = iD;
-                    melhorParcial = antibody->cost;
-                }
-
-                antibody->swapFacility(iE,iD);
-                antibody->calculateAbcissa();
-                antibody->cost=foCorrente;
-            }else{
-                iE++;
-                iD--;
-            }
-        }
-
-        trocas+=2;
-        antibody->swapFacility(melhortroca[0], melhortroca[1]);
-        antibody->calculateSwap(melhortroca[0], melhortroca[1]);
-        trocada[melhortroca[0]]=true;
-        trocada[ melhortroca[1]]=true;
-        foCorrente=antibody->cost;
-
-        melhortroca[0] = -1;
-        melhortroca[1] = -1;
-        melhorParcial = -1;
-
-        iE = 0;
-        iD = antibody->p - 1;
-        if (antibody->cost < bestAntibody->cost) {
-            bestAntibody->armazenar(this->corredorSolucao, antibody->p, antibody->cost);
-        }
-
-
-    }
-    melhorSolucao->restaurar(this->corredorSolucao, &antibody->p, &antibody->cost);
-    montarAbcissas();
-
-    delete melhorSolucao;
-    delete[] trocada;*/
 }
 
 void Search::testAllPopulation() {
