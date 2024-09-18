@@ -12,10 +12,24 @@ Search::Search(Config *config, Instance *instance, double litSol) {
     this->instance=instance;
     this->litSol=litSol;
 
+    this->q = new double[3];
+    this->q[0] = 1000000.0;
+    this->q[1] = 1000000.0;
+    this->q[2] = 1000000.0;
+
+    this->usar = new bool[3];
+    this->usar[0] = true;
+    this->usar[1] = true;
+    this->usar[2] = true;
+
+    this->espacoAm = 3000000.0;
+    this->action = -1;
+    this->state = -1;
 }
 
 Search::~Search() {
-
+    delete [] this->q;
+    delete [] this->usar;
     if(this->population!= nullptr){
         for(int i=0;i< this->config->pSize;i++){
             if(this->population[i]!= nullptr) {
@@ -350,7 +364,38 @@ void Search::vns(Antibody *antibody) {
     }
 
 }
+int Search::select_local_search() {
+    this->espacoAm = 0.0;
+
+    for(int i=0;i<3;i++) {
+        if(this->usar[i]) {
+            this->espacoAm += this->q[i];
+        }
+    }
+    double prob;
+    for(int i=0;i<100;i++) {
+        prob = rand()%((int)ceil(this->espacoAm));
+        cout<<prob<<endl;
+    }
+
+    double x = 0.0;
+    int i=-1;
+
+    do {
+        if(this->usar[i+1]) {
+            x+=this->q[i+1];
+        }
+        i++;
+    }while (x < prob && i < 2);
+
+    return i;
+}
+
 void Search::vns_q(Antibody *antibody) {
+
+    int ls = select_local_search();
+
+    cout<<ls<<endl;
 
 
 }

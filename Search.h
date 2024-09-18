@@ -38,6 +38,7 @@ public:
     bool neighborsSwap(Antibody *antibody);
     bool nonNeiborhsSwap(Antibody *antibody);
     bool opositeSideSwap(Antibody *antibody);
+    int select_local_search();
 
 
     void printPopulation();
@@ -54,7 +55,9 @@ public:
     //Atributos QLearning
     int state;
     int action;
-    double* Q;
+    double* q;
+    bool* usar;
+    double espacoAm;
 
 
 private:
