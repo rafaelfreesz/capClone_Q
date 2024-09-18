@@ -374,7 +374,8 @@ int Search::select_local_search() {
     }
     double prob;
     for(int i=0;i<100;i++) {
-        prob = rand()%((int)ceil(this->espacoAm));
+        prob = rand();
+        // %((int)ceil(this->espacoAm));
         cout<<prob<<endl;
     }
 
