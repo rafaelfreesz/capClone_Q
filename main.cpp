@@ -46,7 +46,7 @@ int main() {
         cout<<endl<<"RESUME: AVG TIME: "<<to_string(stats->avgTimes[i])<<"s | BEST COST: "<<to_string(stats->bestCosts[i])<<" | LitSol: "<<to_string(stats->litSol[i])<<" | GAP: "<<to_string(stats->gapsSol[i])<<endl<<endl;
 
         cout<<"Execução Q-learning"<<endl;
-        for(int j=0; j < 1; j++) {
+        for(int j=0; j < config->executions; j++) {
             srand(config->seeds[j]);
             cout<<"\t"<<j<<" - ";
 
