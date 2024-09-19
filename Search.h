@@ -9,6 +9,7 @@
 #include "Antibody.h"
 #include "Config.h"
 #include "Utils.h"
+#define NONE (-1)
 #define NBR_SWAP 0
 #define NONBR_SWAP 1
 #define OPPS_SWAP 2
@@ -33,13 +34,13 @@ public:
     //Local Searches
     void vns(Antibody* antibody);
     void vns_q(Antibody* antibody);
-    void rvnd(Antibody* antibody);
-    void rvnd_q(Antibody* antibody);
     bool neighborsSwap(Antibody *antibody);
     bool nonNeiborhsSwap(Antibody *antibody);
     bool opositeSideSwap(Antibody *antibody);
-    int select_local_search();
 
+    void print_q();
+    void select_local_search();
+    void calculate_reward(double delta);
 
     void printPopulation();
     void printClones();
@@ -55,9 +56,10 @@ public:
     //Atributos QLearning
     int state;
     int action;
-    double* q;
-    bool* usar;
+    double** q;
+    bool* usar_action;
     double espacoAm;
+    double last_improvement_delta;
 
 
 private:

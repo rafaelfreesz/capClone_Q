@@ -12,24 +12,32 @@ Search::Search(Config *config, Instance *instance, double litSol) {
     this->instance=instance;
     this->litSol=litSol;
 
-    this->q = new double[3];
-    this->q[0] = 1000000.0;
-    this->q[1] = 1000000.0;
-    this->q[2] = 1000000.0;
+    this->q = new double*[3];
+    for(int i=0;i<3;i++) {
+        this->q[i] = new double[3];
+        for(int j=0;j<3;j++) {
+            if(i!=j) {
+                this->q[i][j] = 1000.0;
+            }else {
+                this->q[i][j] = 0.0;
+            }
+        }
+    }
 
-    this->usar = new bool[3];
-    this->usar[0] = true;
-    this->usar[1] = true;
-    this->usar[2] = true;
+    this->usar_action = new bool[3];
+    this->usar_action[0] = true;
+    this->usar_action[1] = true;
+    this->usar_action[2] = true;
 
-    this->espacoAm = 3000000.0;
+    this->espacoAm = (this->q[0][0]+this->q[0][1]+this->q[0][2]);
     this->action = -1;
     this->state = -1;
+    this->last_improvement_delta = -1;
 }
 
 Search::~Search() {
     delete [] this->q;
-    delete [] this->usar;
+    delete [] this->usar_action;
     if(this->population!= nullptr){
         for(int i=0;i< this->config->pSize;i++){
             if(this->population[i]!= nullptr) {
@@ -290,62 +298,6 @@ void Search::swapAntibody(int i, int j) {
     this->population[j]=antibody;
 }
 
-void Search::rvnd(Antibody *antibody) {
-
-    int searchSequence[3]={0, 1, 2};
-    int lastImproved;
-    shuffle(searchSequence,searchSequence+3,std::default_random_engine(rand()));
-
-   // 1 0 2
-    int fase=0;
-    while(fase < 3){
-
-        switch (searchSequence[fase]) {
-            case 0:
-                if(searchSequence[fase]!=lastImproved) {
-                    if (neighborsSwap(antibody)) {
-                        lastImproved = searchSequence[fase];
-                        fase = 0;
-                    } else {
-                        fase++;
-                    }
-                }else{
-                    fase++;
-                }
-                break;
-            case 1:
-                if(searchSequence[fase]!=lastImproved) {
-                    if (nonNeiborhsSwap(antibody)) {
-                        lastImproved = searchSequence[fase];
-                        fase = 0;
-                    } else {
-                        fase++;
-                    }
-                }else{
-                    fase++;
-                }
-                break;
-            case 2:
-                if(searchSequence[fase]!=lastImproved) {
-                    if (opositeSideSwap(antibody)) {
-                        lastImproved = searchSequence[fase];
-                        fase = 0;
-                    } else {
-                        fase++;
-                    }
-                }else{
-                    fase++;
-                }
-                break;
-        }
-
-    }
-
-}
-void Search::rvnd_q(Antibody *antibody) {
-
-
-}
 void Search::vns(Antibody *antibody) {
 
     int ls=rand()%3;
@@ -364,42 +316,109 @@ void Search::vns(Antibody *antibody) {
     }
 
 }
-int Search::select_local_search() {
-    this->espacoAm = 0.0;
 
-    for(int i=0;i<3;i++) {
-        if(this->usar[i]) {
-            this->espacoAm += this->q[i];
+void Search::select_local_search() {
+
+    if(this->state == NONE) {
+        this->state = rand()%3;
+        this->action = this->state;
+    }else {
+
+        double rand_eps = (double)(rand()%1001)/1000;
+
+        bool all_actions_blocked = !this->usar_action[0] && !this->usar_action[1] && !this->usar_action[2];
+
+        if(rand_eps < this->config->epsilon || all_actions_blocked) {
+            for(int i=0;i<3;i++) {
+                this->usar_action[i] = true;
+            }
+            this->action = rand()%3;
+        }else {
+
+            this->espacoAm = 0.0;
+
+            for(int i=0;i<3;i++) {
+                if(this->usar_action[i] && this->action!=i) {
+                    this->espacoAm += this->q[this->state][i];
+                }
+            }
+
+            double prob = rand()%((int)ceil(this->espacoAm));
+            double x = 0.0;
+
+
+            int i=-1;
+
+            do {
+                if(this->usar_action[i+1] && this->action!=(i+1)) {
+                    x+=this->q[this->state][i+1];
+                }
+                i++;
+            }while (x < prob && this->action < 2);
+            this->action=i;
+
         }
     }
-    double prob;
-    for(int i=0;i<100;i++) {
-        prob = rand();
-        // %((int)ceil(this->espacoAm));
-        cout<<prob<<endl;
-    }
-
-    double x = 0.0;
-    int i=-1;
-
-    do {
-        if(this->usar[i+1]) {
-            x+=this->q[i+1];
-        }
-        i++;
-    }while (x < prob && i < 2);
-
-    return i;
 }
 
 void Search::vns_q(Antibody *antibody) {
 
-    int ls = select_local_search();
+    select_local_search();
 
-    cout<<ls<<endl;
+    double delta = antibody->cost;
 
+    if(this->action == NBR_SWAP) {
+        neighborsSwap(antibody);
+    }else if(this->action == NONBR_SWAP) {
+        nonNeiborhsSwap(antibody);
+    }else if(this->action == OPPS_SWAP) {
+        opositeSideSwap(antibody);
+    }
+
+    delta = antibody->cost - delta;
+
+    if(this->state != this->action) {
+        calculate_reward(delta);
+    }
+
+    this->state = this->action;
 
 }
+void Search::print_q() {
+    cout<<endl;
+    for(int i=0;i<3;i++) {
+        for(int j=0;j<3;j++) {
+            cout<<to_string(this->q[i][j])+",";
+        }
+        cout<<endl;
+    }
+}
+
+void Search::calculate_reward(double delta) {
+
+    double best_next_q = -1.0;
+
+    // print_q(); //TODO APAGAR
+
+    for(int i=0;i<3;i++) {
+        if(this->q[this->action][i] > best_next_q) {
+            best_next_q = this->q[this->action][i];
+        }
+    }
+
+    double reward;
+
+    if(delta<0) { //Recompensa
+        reward = -delta;
+        this->last_improvement_delta = -delta;
+    }else { //Punição
+        reward = -this->last_improvement_delta;
+    }
+
+    q[this->state][this->action] = q[this->state][this->action] + this->config->alpha*(reward + this->config->epsilon*best_next_q);
+    // print_q();
+}
+
 //Fase de Trocas lado a lado //TODO Analisar melhor o movimento
 bool Search::neighborsSwap(Antibody *antibody) {
 

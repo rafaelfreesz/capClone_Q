@@ -7,12 +7,13 @@
 
 
 #include <cmath>
+#include <ctime>
 
 class Config {
 
 public:
 
-    Config(int pSize, int gen, double memorySetRate, double betaCoeff, double regenerationRate, int execs) {
+    Config(int pSize, int gen, double memorySetRate, double betaCoeff, double regenerationRate, int execs, double alpha, double epsilon) {
         this->pSize=pSize;
         this->gen=gen;
         this->memorySetSize=(int)(memorySetRate * pSize);
@@ -20,6 +21,8 @@ public:
         this->regenerationQty= this->pSize * regenerationRate;
         this->executions=execs;
         this->clonesPerI= nullptr;
+        this->alpha = alpha;
+        this->epsilon = epsilon;
 
         srand(clock());
         this->seeds=new long [execs];
@@ -39,19 +42,6 @@ public:
     }
 
     void countClonalSelection(){
-
-        /*this->clonesPerI=new int [this->memorySetSize];
-        this->clonePop=0;
-
-        int betaN=this->betaCoeff*this->pSize;
-        //TODO usar round e encerrar quando round<1
-        int clones;
-        for(int i=0;i<this->memorySetSize; i++){
-
-            int clones= max(1,betaN / (i+1));
-            this->clonesPerI[i]=clones;
-            this->clonePop+=clones;
-        }*/
 
         vector<int> clonesPerIVector;
         this->memorySetSize=0;
@@ -109,6 +99,8 @@ public:
     int executions;
     long* seeds;
     int* clonesPerI;
+    double alpha;
+    double epsilon;
 
 
 };
