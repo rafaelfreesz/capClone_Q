@@ -8,6 +8,7 @@
 
 #include "Antibody.h"
 #include "Config.h"
+#include "Stats.h"
 #include "Utils.h"
 #define NONE (-1)
 #define NBR_SWAP 0
@@ -17,11 +18,13 @@
 
 class Search {
 public:
-    Search(Config *config, Instance *instance, double litSol);
+    Search(Config *config, Instance *instance, double litSol, bool is_q, bool is_debug, int execNum);
     ~Search();
 
     void evolve();
+    void evolve_debug_mode();
     void evolve_q();
+    void evolve_q_debug_mode();
     void buildInitialPopulation();
     void operate();
     void operate_q();
@@ -60,6 +63,8 @@ public:
     bool* usar_action;
     double espacoAm;
     double last_improvement_delta;
+    int execNum;
+    bool is_debug;
 
 
 private:
@@ -68,6 +73,12 @@ private:
     void sortPopulation();
     void sortClones();
     void swapAntibody(int i, int j);
+    int* contaEscolha;
+    Stats* myStatsPop;
+    Stats* myStatsEscolhas;
+    Stats* myStatsEscolha;
+    bool is_q;
+    int ls_exec_count;
 
 };
 

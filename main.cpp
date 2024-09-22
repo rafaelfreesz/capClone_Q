@@ -21,13 +21,13 @@ int main() {
 
 
     for(int i=0;i<instances.size();i++){
-        cout<<"Instância "+instances.at(i)->name<<endl;
-        cout<<"Execução Normal"<<endl;
+        cout<<"Instancia "+instances.at(i)->name<<endl;
+        cout<<"Execucao Normal"<<endl;
         for(int j=0; j < config->executions; j++) {
             srand(config->seeds[j]);
             cout<<"\t"<<j<<" - ";
 
-            Search* search = new Search(config, instances.at(i), stats->litSol[i]);
+            Search* search = new Search(config, instances.at(i), stats->litSol[i],false,false,j);
 
             clock_t time=clock();
             search->evolve();
@@ -45,12 +45,12 @@ int main() {
         stats->printStats(instances.at(i)->name,i);
         cout<<endl<<"RESUME: AVG TIME: "<<to_string(stats->avgTimes[i])<<"s | BEST COST: "<<to_string(stats->bestCosts[i])<<" | LitSol: "<<to_string(stats->litSol[i])<<" | GAP: "<<to_string(stats->gapsSol[i])<<endl<<endl;
 
-        cout<<"Execução Q-learning"<<endl;
+        cout<<"Execucao Q-learning"<<endl;
         for(int j=0; j < config->executions; j++) {
             srand(config->seeds[j]);
             cout<<"\t"<<j<<" - ";
 
-            Search* search = new Search(config, instances.at(i), stats_q->litSol[i]);
+            Search* search = new Search(config, instances.at(i), stats_q->litSol[i],true,false,j);
 
             clock_t time=clock();
             search->evolve_q();
@@ -68,6 +68,33 @@ int main() {
         stats_q->printStats(instances.at(i)->name,i);
         cout<<endl<<"RESUME: AVG TIME: "<<to_string(stats_q->avgTimes[i])<<"s | BEST COST: "<<to_string(stats_q->bestCosts[i])<<" | LitSol: "<<to_string(stats_q->litSol[i])<<" | GAP: "<<to_string(stats_q->gapsSol[i])<<endl<<endl;
 
+        cout<<"Execucao Normal Debug"<<endl;
+        for(int j=0; j < config->executions; j++) {
+            srand(config->seeds[j]);
+            cout<<"\t"<<j<<" - ";
+
+            Search* search = new Search(config, instances.at(i), stats->litSol[i],false,true,j);
+            search->evolve_debug_mode();
+
+            search->testAllPopulation();
+            cout<<"Fim!"<<endl;
+            delete search;
+        }
+        cout<<"Fim Normal Debug"<<endl;
+
+        cout<<"Execucao Q-learning Debug"<<endl;
+        for(int j=0; j < config->executions; j++) {
+            srand(config->seeds[j]);
+            cout<<"\t"<<j<<" - ";
+
+            Search* search = new Search(config, instances.at(i), stats_q->litSol[i],true,true,j);
+            search->evolve_q_debug_mode();
+            search->testAllPopulation();
+            cout<<"Fim!"<<endl;
+
+            delete search;
+        }
+        cout<<"Fim Q-Learning Debug!"<<endl;
     }
 
 

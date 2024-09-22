@@ -6,14 +6,28 @@
 #include <random>
 #include "Search.h"
 
-Search::Search(Config *config, Instance *instance, double litSol) {
+Search::Search(Config *config, Instance *instance, double litSol, bool is_q, bool is_debug, int execNum) {
     this->config=config;
     this->population= new Antibody* [this->config->arraySize];
     this->instance=instance;
     this->litSol=litSol;
-
+    this->is_q = is_q;
+    if(is_debug) {
+        this->myStatsPop= new Stats("print_pop", is_q);
+        this->myStatsEscolhas= new Stats("escolhas", is_q);
+        this->myStatsEscolha= new Stats("escolha", is_q);
+    }else {
+        this->myStatsPop= nullptr;
+        this->myStatsEscolhas= nullptr;
+        this->myStatsEscolha= nullptr;
+    }
+    this->execNum=execNum;
+    this->ls_exec_count = 0;
+    this->is_debug = is_debug;
     this->q = new double*[3];
+    this->contaEscolha = new int[3];
     for(int i=0;i<3;i++) {
+        this->contaEscolha[i]=0;
         this->q[i] = new double[3];
         for(int j=0;j<3;j++) {
             if(i!=j) {
@@ -36,6 +50,11 @@ Search::Search(Config *config, Instance *instance, double litSol) {
 }
 
 Search::~Search() {
+    if(this->is_debug) {
+        delete this->myStatsEscolhas;
+        delete this->myStatsEscolha;
+        delete this->myStatsPop;
+    }
     delete [] this->q;
     delete [] this->usar_action;
     if(this->population!= nullptr){
@@ -53,25 +72,51 @@ Search::~Search() {
 }
 
 void Search::evolve() {
-    buildInitialPopulation();
-
-   for(int g=0;g<this->config->gen;g++){
+   buildInitialPopulation();
+    for(int g=0;g<this->config->gen;g++){
         operate();
         reselect();
         regenerate();
-   }
+    }
     improveMemory();
 }
 
-void Search::evolve_q() {
+void Search::evolve_debug_mode() {
     buildInitialPopulation();
+    this->myStatsPop->printPop(this->population,this->config->pSize,this->instance->name,this->execNum,0);
+    for(int g=0;g<this->config->gen;g++){
+        operate();
+        reselect();
+        regenerate();
+        this->myStatsPop->printPop(this->population,this->config->pSize,this->instance->name,this->execNum,g+1);
+    }
+    improveMemory();
+    this->myStatsPop->printPop(this->population,this->config->pSize,this->instance->name,this->execNum,this->config->gen+2);
+    this->myStatsEscolhas->printEscolhas(this->contaEscolha,this->execNum,this->instance->name);
+}
 
+void Search::evolve_q_debug_mode() {
+    buildInitialPopulation();
+    this->myStatsPop->printPop(this->population,this->config->pSize,this->instance->name,this->execNum,0);
+    for(int g=0;g<this->config->gen;g++){
+        operate_q();
+        reselect();
+        regenerate();
+        this->myStatsPop->printPop(this->population,this->config->pSize,this->instance->name,this->execNum,g+1);
+    }
+    improveMemory_q();
+    this->myStatsPop->printPop(this->population,this->config->pSize,this->instance->name,this->execNum,this->config->gen+2);
+    this->myStatsEscolhas->printEscolhas(this->contaEscolha,this->execNum,this->instance->name);
+}
+
+void Search::evolve_q() {
+   buildInitialPopulation();
    for(int g=0;g<this->config->gen;g++){
         operate_q();
         reselect();
         regenerate();
    }
-    improveMemory_q();
+   improveMemory_q();
 }
 
 void Search::improveMemory() {
@@ -301,15 +346,21 @@ void Search::swapAntibody(int i, int j) {
 void Search::vns(Antibody *antibody) {
 
     int ls=rand()%3;
+    if(this->is_debug) {
+        this->myStatsEscolha->printEscolha(ls,this->ls_exec_count++,this->execNum,this->instance->name);
+    }
     switch (ls) {
         case NBR_SWAP:
             neighborsSwap(antibody);
+            this->contaEscolha[NBR_SWAP] = this->contaEscolha[NBR_SWAP]+1;
             break;
         case NONBR_SWAP:
             nonNeiborhsSwap(antibody);
+            this->contaEscolha[NONBR_SWAP] = this->contaEscolha[NONBR_SWAP]+1;
             break;
         case OPPS_SWAP:
             opositeSideSwap(antibody);
+            this->contaEscolha[OPPS_SWAP] = this->contaEscolha[OPPS_SWAP]+1;
             break;
         default:
             cout<<"Algo deu errado"<<endl;
@@ -365,14 +416,21 @@ void Search::vns_q(Antibody *antibody) {
 
     select_local_search();
 
+    if(this->is_debug) {
+        this->myStatsEscolha->printEscolha(this->action,this->ls_exec_count++,this->execNum,this->instance->name);
+    }
+
     double delta = antibody->cost;
 
     if(this->action == NBR_SWAP) {
         neighborsSwap(antibody);
+        this->contaEscolha[NBR_SWAP] = this->contaEscolha[NBR_SWAP]+1;
     }else if(this->action == NONBR_SWAP) {
         nonNeiborhsSwap(antibody);
+        this->contaEscolha[NONBR_SWAP] = this->contaEscolha[NONBR_SWAP]+1;
     }else if(this->action == OPPS_SWAP) {
         opositeSideSwap(antibody);
+        this->contaEscolha[OPPS_SWAP] = this->contaEscolha[OPPS_SWAP]+1;
     }
 
     delta = antibody->cost - delta;
@@ -384,6 +442,7 @@ void Search::vns_q(Antibody *antibody) {
     this->state = this->action;
 
 }
+
 void Search::print_q() {
     cout<<endl;
     for(int i=0;i<3;i++) {

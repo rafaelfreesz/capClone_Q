@@ -8,11 +8,13 @@
 #include <vector>
 #include "Instance.h"
 #include "Config.h"
+#include "Antibody.h"
 
 using namespace std;
 class Stats {
 public:
     Stats(int intancesQty, Config *config, bool isQL);
+    Stats(string type, bool isQL);
 
     ~Stats();
 
@@ -21,8 +23,13 @@ public:
     double getCost(int execI, int instanceI);
     void printStats(string instanceName, int instanceI);
     void printHeader(Config* config);
+    void printHeaderPrintPop();
+    void printHeaderPrintEscolhas();
+    void printHeaderPrintEscolha();
     void getLitSolutions();
-
+    void printPop(Antibody** a, int popsize, string instName, int execnum, int gerNum);
+    void printEscolhas(int* vetor, int execnum, string instname);
+    void printEscolha(int ls, int ls_exec_count, int execnum, string instname);
     int instancesQty;
     int execs;
     double* litSol;
